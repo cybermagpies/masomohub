@@ -2,11 +2,35 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation"; // Needed for redirection
 import { Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter(); // Initialize router for navigation
+
+  // State for UI toggles
   const [isSignIn, setIsSignIn] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  // State for Form Data & Errors
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  // LOGIN LOGIC
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault(); // Stop page refresh
+    setError(""); // Clear previous errors
+
+    // 1. Temporary Hardcoded Check (We will replace this with Database later)
+    if (email === "admin@masomo.com" && password === "123456") {
+      // SUCCESS: Go to Dashboard
+      router.push("/dashboard");
+    } else {
+      // FAILURE: Show Error
+      setError("Incorrect credentials. Try: admin@masomo.com / 123456");
+    }
+  };
 
   return (
     <div className="flex min-h-screen w-full bg-white text-black">
@@ -36,7 +60,7 @@ export default function LoginPage() {
         {/* Toggle Tabs (Sign In / Sign Up) */}
         <div className="mb-8 flex w-full max-w-md rounded-full bg-gray-100 p-1">
           <button
-            onClick={() => setIsSignIn(true)}
+            onClick={() => { setIsSignIn(true); setError(""); }}
             className={`w-1/2 rounded-full py-2.5 text-sm font-semibold transition-all duration-200 ${
               isSignIn
                 ? "bg-blue-600 text-white shadow-md"
@@ -46,7 +70,7 @@ export default function LoginPage() {
             Sign In
           </button>
           <button
-            onClick={() => setIsSignIn(false)}
+            onClick={() => { setIsSignIn(false); setError(""); }}
             className={`w-1/2 rounded-full py-2.5 text-sm font-semibold transition-all duration-200 ${
               !isSignIn
                 ? "bg-blue-600 text-white shadow-md"
@@ -58,14 +82,17 @@ export default function LoginPage() {
         </div>
 
         {/* INPUT FIELDS */}
-        <div className="w-full max-w-md space-y-5">
+        <form onSubmit={handleLogin} className="w-full max-w-md space-y-5">
           
           {/* Email Input */}
           <div className="relative">
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 pl-5 text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              required
             />
             <Mail className="absolute right-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           </div>
@@ -74,10 +101,14 @@ export default function LoginPage() {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 pl-5 text-gray-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              required
             />
             <button
+              type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
@@ -101,8 +132,18 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* ERROR MESSAGE DISPLAY */}
+          {error && (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-500 text-center animate-pulse">
+              {error}
+            </div>
+          )}
+
           {/* Login Button */}
-          <button className="w-full rounded-2xl bg-blue-600 py-4 text-base font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:scale-[1.01] active:scale-[0.98]">
+          <button 
+            type="submit"
+            className="w-full rounded-2xl bg-blue-600 py-4 text-base font-bold text-white shadow-lg shadow-blue-600/20 transition-transform hover:scale-[1.01] active:scale-[0.98]"
+          >
             {isSignIn ? "Login" : "Create Account"}
           </button>
 
@@ -118,23 +159,27 @@ export default function LoginPage() {
 
           {/* Social Buttons */}
           <div className="space-y-3">
-             <button className="flex w-full items-center justify-center gap-3 rounded-2xl border border-gray-800 bg-gray-900 py-3.5 font-medium text-white transition-opacity hover:opacity-90">
+             <button type="button" className="flex w-full items-center justify-center gap-3 rounded-2xl border border-gray-800 bg-gray-900 py-3.5 font-medium text-white transition-opacity hover:opacity-90">
               Log in with Apple
             </button>
-            <button className="flex w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white py-3.5 font-medium text-gray-700 transition-colors hover:bg-gray-50">
+            <button type="button" className="flex w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white py-3.5 font-medium text-gray-700 transition-colors hover:bg-gray-50">
               Log in with Google
             </button>
           </div>
-        </div>
+        </form>
       </div>
 
       {/* RIGHT SIDE - IMAGE PLACEHOLDER */}
-      <div className="hidden w-1/2 items-center justify-center bg-blue-900 md:flex">
-         <div className="text-white opacity-80">
-            {/* If you have an image, uncomment the Image component below */}
-            {/* <Image src="/login-bg.jpg" alt="bg" fill className="object-cover" /> */}
-            <h2 className="text-3xl font-bold">Image Goes Here</h2>
-            <p>Save an image to public/login-bg.jpg</p>
+      <div className="hidden w-1/2 items-center justify-center bg-blue-900 md:flex relative">
+         {/* Uncomment the Image component below when you have the file 'public/login-bg.jpg' */}
+         {/* <div className="absolute inset-0">
+            <Image src="/login-bg.jpg" alt="bg" fill className="object-cover opacity-90" priority />
+         </div> 
+         */}
+         
+         <div className="z-10 text-center text-white p-10">
+            <h2 className="text-4xl font-bold mb-4">Master New Skills</h2>
+            <p className="text-blue-100 max-w-md mx-auto">Join a community of learners and facilitators on Masomohub today.</p>
          </div>
       </div>
     </div>
