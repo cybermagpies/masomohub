@@ -1,80 +1,281 @@
-import React from "react";
-import { LayoutDashboard, Users, Settings, LogOut, Bell } from "lucide-react";
-// import { signOut } from "@/auth"; // We will enable this later
+import { getDashboardData } from "./actions";
+import { useEffect, useState } from "react";
+"use client";
 
-export default function Dashboard() {
+import React from 'react';
+import Image from 'next/image';
+import {
+  LayoutDashboard,
+  BookOpen,
+  ClipboardList,
+  Users,
+  MessageSquare,
+  Settings,
+  LogOut,
+  Search,
+  Bell,
+  Mail,
+  ChevronRight,
+  PlayCircle,
+  MoreVertical,
+  ChevronLeft,
+  Plus,
+  UserPlus
+} from 'lucide-react';
+
+// --- DUMMY DATA (We will replace this with real Database data later) ---
+const currentUser = {
+    name: "Alex Johnson",
+    role: "Student",
+    avatar: "https://i.pravatar.cc/150?u=alex",
+};
+
+const coursesInProgress = [
+    { id: 1, title: "UI/UX Design Fundamentals", progress: 25, total: 8, completed: 2, color: "bg-violet-100 text-violet-600", icon: LayoutDashboard },
+    { id: 2, title: "Advanced React Patterns", progress: 40, total: 10, completed: 4, color: "bg-pink-100 text-pink-600", icon: BookOpen },
+    { id: 3, title: "Digital Marketing 101", progress: 10, total: 12, completed: 1, color: "bg-blue-100 text-blue-600", icon: ClipboardList },
+];
+
+const continueLearning = [
+    { id: 1, title: "Beginner's Guide to Becoming a Front-End Developer", category: "Front End", image: "https://picsum.photos/seed/course1/400/250", mentor: "Leonardo Samsul" },
+    { id: 2, title: "Optimizing User Experience with Best UI/UX Design", category: "UI/UX Design", image: "https://picsum.photos/seed/course2/400/250", mentor: "Bayu Salto" },
+];
+
+const mentors = [
+    { id: 1, name: "Padhang Satrio", role: "Senior UI/UX Designer", avatar: "https://i.pravatar.cc/150?u=padhang" },
+    { id: 2, name: "Zakir Horizontal", role: "Front-End Lead", avatar: "https://i.pravatar.cc/150?u=zakir" },
+    { id: 3, name: "Leonardo Samsul", role: "Backend Specialist", avatar: "https://i.pravatar.cc/150?u=leonardo" },
+];
+// ---------------------------------------------------------------------
+
+
+export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen bg-gray-50 text-gray-900">
-      
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
-        <div className="h-20 flex items-center justify-center border-b border-gray-100">
-           <h1 className="text-2xl font-bold text-blue-600">Masomohub</h1>
+    <div className="flex min-h-screen bg-[#F4F5FA] font-sans text-slate-800">
+      {/* --- SIDEBAR --- */}
+      <aside className="w-72 bg-white p-6 flex flex-col border-r border-slate-100 hidden md:flex fixed h-full">
+        {/* Logo */}
+        <div className="flex items-center gap-3 mb-12 pl-2">
+          <div className="bg-violet-600 p-2.5 rounded-xl shadow-lg shadow-violet-200">
+            <LayoutDashboard className="text-white" size={24} />
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Masomohub</h1>
         </div>
-        
-        <nav className="flex-1 p-4 space-y-2">
-          <a href="#" className="flex items-center gap-3 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-medium transition-colors">
-            <LayoutDashboard size={20} />
-            Overview
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors">
-            <Users size={20} />
-            Students
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors">
-            <Settings size={20} />
-            Settings
-          </a>
-        </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <button className="flex w-full items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl font-medium transition-colors">
-            <LogOut size={20} />
-            Logout
-          </button>
+        {/* Menu */}
+        <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 pl-4">Overview</h3>
+            <nav className="space-y-2">
+            <SidebarItem icon={LayoutDashboard} label="Dashboard" active />
+            <SidebarItem icon={MessageSquare} label="Messages" hasBadge />
+            <SidebarItem icon={BookOpen} label="My Courses" />
+            <SidebarItem icon={ClipboardList} label="Assignments" />
+            <SidebarItem icon={Users} label="Community" />
+            </nav>
+        </div>
+
+        {/* Bottom Menu */}
+        <div className="mt-auto">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 pl-4">Settings</h3>
+          <div className="space-y-2">
+            <SidebarItem icon={Settings} label="Settings" />
+            <button className="flex items-center gap-4 px-4 py-3.5 text-red-500 hover:bg-red-50 rounded-2xl w-full transition-all font-semibold group">
+                <LogOut size={22} className="group-hover:translate-x-1 transition-transform" />
+                <span>Logout</span>
+            </button>
+          </div>
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col">
-        
-        {/* TOP HEADER */}
-        <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8">
-          <h2 className="text-xl font-semibold">Dashboard Overview</h2>
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-gray-400 hover:text-gray-600 relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-            <div className="h-10 w-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold">
-              JM
+      {/* --- MAIN CONTENT --- */}
+      <div className="flex-1 flex flex-col md:ml-72">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-md p-6 pl-8 flex items-center justify-between sticky top-0 z-20 border-b border-slate-100">
+          <div className="flex items-center bg-white border-2 border-slate-100 rounded-2xl px-4 py-2.5 w-full max-w-md focus-within:border-violet-300 transition-colors">
+            <Search className="text-slate-400" size={20} />
+            <input type="text" placeholder="Search your course..." className="bg-transparent border-none outline-none flex-1 ml-3 text-slate-700 font-medium placeholder:text-slate-400" />
+          </div>
+          <div className="flex items-center gap-6">
+            <IconButton icon={Mail} />
+            <IconButton icon={Bell} hasBadge />
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                <Image src={currentUser.avatar} alt={currentUser.name} width={44} height={44} className="rounded-full border-2 border-white shadow-sm" />
+                <span className="font-bold text-slate-800">{currentUser.name}</span>
             </div>
           </div>
         </header>
 
-        {/* DASHBOARD CONTENT */}
-        <div className="p-8">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <p className="text-gray-500 text-sm mb-1">Total Students</p>
-                <h3 className="text-3xl font-bold">1,240</h3>
-             </div>
-             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <p className="text-gray-500 text-sm mb-1">Active Courses</p>
-                <h3 className="text-3xl font-bold">12</h3>
-             </div>
-             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <p className="text-gray-500 text-sm mb-1">Revenue</p>
-                <h3 className="text-3xl font-bold">$4,300</h3>
-             </div>
+        {/* Scrollable Content Area */}
+        <main className="p-8 flex flex-col lg:flex-row gap-8">
+          
+          {/* LEFT COLUMN (Main) */}
+          <div className="flex-1 space-y-8">
+            {/* Banner */}
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[2.5rem] p-12 text-white relative overflow-hidden shadow-xl shadow-violet-200 flex items-center">
+                <div className="relative z-10 max-w-lg">
+                    <span className="inline-block bg-white/20 px-4 py-1 rounded-full text-sm font-bold tracking-wide mb-6 backdrop-blur-sm">ONLINE PLATFORM</span>
+                    <h2 className="text-4xl font-extrabold leading-tight mb-8">Sharpen Your Skills with Masomohub's Professional Courses</h2>
+                    <button className="bg-white text-violet-700 px-8 py-4 rounded-full font-bold hover:bg-violet-50 transition-all flex items-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-1">
+                        Join Now <ChevronRight size={20} className="stroke-[3]" />
+                    </button>
+                </div>
+                {/* Decorative Shapes */}
+                <div className="absolute right-0 top-0 h-full w-1/2 pointer-events-none">
+                    <SparkleIcon className="absolute top-12 right-12 text-white opacity-30 animate-pulse" size={140} />
+                    <SparkleIcon className="absolute bottom-12 left-0 text-white opacity-20" size={100} />
+                </div>
+            </div>
+
+            {/* Progress Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {coursesInProgress.map(course => (
+                    <div key={course.id} className="bg-white p-5 rounded-[2rem] flex items-center gap-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className={`p-4 rounded-2xl ${course.color}`}>
+                            <course.icon size={28} className="stroke-[2.5]" />
+                        </div>
+                        <div>
+                            <h4 className="text-xl font-extrabold text-slate-800 mb-1">{course.completed}/{course.total} Units</h4>
+                            <p className="text-slate-500 font-bold text-sm truncate">{course.title}</p>
+                        </div>
+                         <div className="ml-auto self-start -mt-1 -mr-1">
+                            <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+                                <MoreVertical size={20} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Continue Learning */}
+            <div>
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-extrabold text-slate-800">Continue Learning</h3>
+                    <div className="flex gap-2">
+                        <CircularButton icon={ChevronLeft} />
+                        <CircularButton icon={ChevronRight} active />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {continueLearning.map(item => (
+                        <div key={item.id} className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group">
+                            <div className="relative h-52 rounded-[2rem] overflow-hidden mb-5">
+                                <Image src={item.image} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <PlayCircle className="text-white drop-shadow-lg" size={64} />
+                                </div>
+                                <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-bold text-violet-700 uppercase tracking-wider shadow-sm">{item.category}</span>
+                            </div>
+                            <h4 className="text-lg font-bold text-slate-800 mb-4 leading-snug pr-4 line-clamp-2">{item.title}</h4>
+                            <div className="flex items-center gap-3">
+                                <Image src="https://i.pravatar.cc/150?u=mentor1" alt={item.mentor} width={36} height={36} className="rounded-full border border-white shadow-sm" />
+                                <div>
+                                    <p className="text-sm font-bold text-slate-700">{item.mentor}</p>
+                                    <p className="text-slate-400 text-xs font-bold">Facilitator</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 h-64 flex items-center justify-center text-gray-400">
-             Chart or Content goes here
+          {/* RIGHT COLUMN (Sidebar) */}
+          <div className="w-full lg:w-[26rem] space-y-8">
+            {/* Statistics Placeholder */}
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xl font-extrabold text-slate-800">Learning Activity</h3>
+                    <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+                        <MoreVertical size={20} />
+                    </button>
+                </div>
+                {/* Replace with a real chart library later */}
+                <div className="h-72 bg-slate-50 rounded-3xl flex flex-col items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-200">
+                    <span className="text-4xl mb-2">📊</span>
+                    <span>Chart Placeholder</span>
+                </div>
+            </div>
+
+             {/* Greeting Card */}
+             <div className="bg-violet-100 p-8 rounded-[2.5rem] flex items-center justify-between relative overflow-hidden">
+                <div className="relative z-10">
+                    <h3 className="text-2xl font-extrabold text-slate-800 mb-2">Good Morning, {currentUser.name.split(' ')[0]}!</h3>
+                    <p className="text-violet-700 font-bold">Keep up the great work! 🔥</p>
+                </div>
+                <div className="text-7xl absolute -right-2 -bottom-4 rotate-12">👋</div>
+             </div>
+
+
+            {/* Top Mentors */}
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xl font-extrabold text-slate-800">Top Facilitators</h3>
+                    <CircularButton icon={Plus} small />
+                </div>
+                <div className="space-y-6">
+                    {mentors.map(mentor => (
+                        <div key={mentor.id} className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <Image src={mentor.avatar} alt={mentor.name} width={54} height={54} className="rounded-full border-2 border-white shadow-sm" />
+                                <div>
+                                    <h4 className="font-bold text-slate-800 text-base">{mentor.name}</h4>
+                                    <p className="text-slate-500 text-sm font-bold">{mentor.role}</p>
+                                </div>
+                            </div>
+                            <button className="text-violet-600 font-bold text-sm bg-violet-50 px-5 py-2.5 rounded-full hover:bg-violet-600 hover:text-white transition-all flex items-center gap-1.5">
+                                <UserPlus size={18} />
+                                Follow
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                <button className="w-full mt-10 py-4 bg-slate-50 text-violet-600 font-bold rounded-2xl hover:bg-slate-100 transition-colors">
+                    See All Facilitators
+                </button>
+            </div>
           </div>
-        </div>
-      </main>
+
+        </main>
+      </div>
     </div>
   );
 }
+
+// --- HELPER COMPONENTS ---
+
+function SidebarItem({ icon: Icon, label, active = false, hasBadge = false }: { icon: any, label: string, active?: boolean, hasBadge?: boolean }) {
+  return (
+    <a href="#" className={`flex items-center justify-between px-4 py-4 rounded-2xl transition-all font-bold group ${active ? 'bg-violet-600 text-white shadow-lg shadow-violet-200' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}>
+      <div className="flex items-center gap-4">
+        <Icon size={22} className={active ? '' : 'group-hover:scale-110 transition-transform'} />
+        <span>{label}</span>
+      </div>
+      {hasBadge && !active && <span className="h-2.5 w-2.5 bg-red-500 rounded-full"></span>}
+    </a>
+  );
+}
+
+function IconButton({ icon: Icon, hasBadge = false }: { icon: any, hasBadge?: boolean }) {
+    return (
+        <button className="p-3.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 border-2 border-transparent hover:border-slate-300 rounded-2xl relative transition-all">
+            <Icon size={22} className="stroke-[2.5]" />
+            {hasBadge && <span className="absolute top-3 right-3 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>}
+        </button>
+    );
+}
+
+function CircularButton({ icon: Icon, active = false, small = false }: { icon: any, active?: boolean, small?: boolean }) {
+    const sizeClasses = small ? 'w-10 h-10' : 'w-12 h-12';
+    return (
+        <button className={`${sizeClasses} rounded-full flex items-center justify-center transition-all ${active ? 'bg-violet-600 text-white shadow-md shadow-violet-200' : 'bg-white text-slate-400 border-2 border-slate-100 hover:border-violet-600 hover:text-violet-600'}`}>
+            <Icon size={small ? 18 : 22} className="stroke-[2.5]" />
+        </button>
+    )
+}
+
+// Custom Icon for the design banner
+const SparkleIcon = ({ className, size }: { className?: string, size?: number }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+    </svg>
+);
