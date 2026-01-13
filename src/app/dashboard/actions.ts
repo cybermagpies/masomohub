@@ -1,10 +1,13 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+// We use the relative path that goes:
+// actions.ts (dashboard) -> up to app (..) -> up to src (..) -> down to lib/prisma
+import { prisma } from "../../lib/prisma"; 
 
 export async function getDashboardData() {
-  const email = "admin@masomo.com"; // Hardcoded for now until we add real Auth
+  const email = "admin@masomo.com"; 
 
+  // Attempt to find the user
   const user = await prisma.user.findUnique({
     where: { email },
     include: {
@@ -16,7 +19,10 @@ export async function getDashboardData() {
     },
   });
 
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    console.error("User not found in DB. Ensure you ran 'npx prisma db seed'");
+    return null; // Return null so the UI can handle it gracefully
+  }
 
   // Format data for the dashboard
   const coursesInProgress = user.enrollments.map((enrollment) => ({
@@ -25,8 +31,8 @@ export async function getDashboardData() {
     progress: enrollment.progress,
     total: enrollment.course.totalUnits,
     completed: enrollment.completedUnits,
-    color: "bg-violet-100 text-violet-600", // You can store color in DB later
-    icon: "LayoutDashboard", // Helper to map icon names later
+    color: "bg-violet-100 text-violet-600",
+    icon: "LayoutDashboard",
   }));
 
   return {

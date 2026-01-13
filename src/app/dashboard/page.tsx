@@ -1,9 +1,8 @@
-import { getDashboardData } from "./actions";
-import { useEffect, useState } from "react";
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { getDashboardData } from "./actions"; // Fetch real data
 import {
   LayoutDashboard,
   BookOpen,
@@ -20,22 +19,14 @@ import {
   MoreVertical,
   ChevronLeft,
   Plus,
-  UserPlus
+  UserPlus,
+  Send, 
+  Bot, 
+  X, 
+  MessageCircle 
 } from 'lucide-react';
 
-// --- DUMMY DATA (We will replace this with real Database data later) ---
-const currentUser = {
-    name: "Alex Johnson",
-    role: "Student",
-    avatar: "https://i.pravatar.cc/150?u=alex",
-};
-
-const coursesInProgress = [
-    { id: 1, title: "UI/UX Design Fundamentals", progress: 25, total: 8, completed: 2, color: "bg-violet-100 text-violet-600", icon: LayoutDashboard },
-    { id: 2, title: "Advanced React Patterns", progress: 40, total: 10, completed: 4, color: "bg-pink-100 text-pink-600", icon: BookOpen },
-    { id: 3, title: "Digital Marketing 101", progress: 10, total: 12, completed: 1, color: "bg-blue-100 text-blue-600", icon: ClipboardList },
-];
-
+// --- STATIC DATA (These remain hardcoded for now) ---
 const continueLearning = [
     { id: 1, title: "Beginner's Guide to Becoming a Front-End Developer", category: "Front End", image: "https://picsum.photos/seed/course1/400/250", mentor: "Leonardo Samsul" },
     { id: 2, title: "Optimizing User Experience with Best UI/UX Design", category: "UI/UX Design", image: "https://picsum.photos/seed/course2/400/250", mentor: "Bayu Salto" },
@@ -46,15 +37,88 @@ const mentors = [
     { id: 2, name: "Zakir Horizontal", role: "Front-End Lead", avatar: "https://i.pravatar.cc/150?u=zakir" },
     { id: 3, name: "Leonardo Samsul", role: "Backend Specialist", avatar: "https://i.pravatar.cc/150?u=leonardo" },
 ];
-// ---------------------------------------------------------------------
 
+// Helper to map DB icon strings to real components
+const iconMap: any = {
+  LayoutDashboard: LayoutDashboard,
+  BookOpen: BookOpen,
+  ClipboardList: ClipboardList
+};
 
 export default function DashboardPage() {
+  // --- STATE MANAGEMENT ---
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [coursesInProgress, setCoursesInProgress] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // AI Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatHistory, setChatHistory] = useState<{role: 'user'|'ai', text: string}[]>([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  // --- 1. FETCH DATABASE DATA ---
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getDashboardData();
+        
+        // Safety Check: Only set state if data exists
+        if (data) {
+            setCurrentUser(data.user);
+            setCoursesInProgress(data.coursesInProgress);
+        } else {
+            console.warn("User not found or DB empty. Showing default/loading state.");
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // --- 2. AI CHAT FUNCTION ---
+  async function handleSendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!chatMessage.trim()) return;
+
+    // Add user message to UI immediately
+    const userText = chatMessage;
+    setChatHistory(prev => [...prev, { role: 'user', text: userText }]);
+    setChatMessage("");
+    setIsAiLoading(true);
+
+    try {
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        body: JSON.stringify({ message: userText }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      
+      // Add AI response to UI
+      setChatHistory(prev => [...prev, { role: 'ai', text: data.reply }]);
+    } catch (error) {
+      setChatHistory(prev => [...prev, { role: 'ai', text: "Sorry, I'm having trouble connecting right now." }]);
+    } finally {
+      setIsAiLoading(false);
+    }
+  }
+
+  // Loading Screen
+  if (loading) return (
+    <div className="flex h-screen w-full items-center justify-center bg-[#F4F5FA] flex-col gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
+        <div className="text-violet-600 font-bold">Loading Masomohub...</div>
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen bg-[#F4F5FA] font-sans text-slate-800">
       {/* --- SIDEBAR --- */}
-      <aside className="w-72 bg-white p-6 flex flex-col border-r border-slate-100 hidden md:flex fixed h-full">
-        {/* Logo */}
+      <aside className="w-72 bg-white p-6 flex flex-col border-r border-slate-100 hidden md:flex fixed h-full z-10">
         <div className="flex items-center gap-3 mb-12 pl-2">
           <div className="bg-violet-600 p-2.5 rounded-xl shadow-lg shadow-violet-200">
             <LayoutDashboard className="text-white" size={24} />
@@ -62,7 +126,6 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Masomohub</h1>
         </div>
 
-        {/* Menu */}
         <div>
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 pl-4">Overview</h3>
             <nav className="space-y-2">
@@ -74,7 +137,6 @@ export default function DashboardPage() {
             </nav>
         </div>
 
-        {/* Bottom Menu */}
         <div className="mt-auto">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 pl-4">Settings</h3>
           <div className="space-y-2">
@@ -99,8 +161,8 @@ export default function DashboardPage() {
             <IconButton icon={Mail} />
             <IconButton icon={Bell} hasBadge />
             <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
-                <Image src={currentUser.avatar} alt={currentUser.name} width={44} height={44} className="rounded-full border-2 border-white shadow-sm" />
-                <span className="font-bold text-slate-800">{currentUser.name}</span>
+                <Image src={currentUser?.avatar || "https://i.pravatar.cc/150"} alt="User" width={44} height={44} className="rounded-full border-2 border-white shadow-sm" />
+                <span className="font-bold text-slate-800">{currentUser?.name || "User"}</span>
             </div>
           </div>
         </header>
@@ -119,34 +181,36 @@ export default function DashboardPage() {
                         Join Now <ChevronRight size={20} className="stroke-[3]" />
                     </button>
                 </div>
-                {/* Decorative Shapes */}
                 <div className="absolute right-0 top-0 h-full w-1/2 pointer-events-none">
                     <SparkleIcon className="absolute top-12 right-12 text-white opacity-30 animate-pulse" size={140} />
                     <SparkleIcon className="absolute bottom-12 left-0 text-white opacity-20" size={100} />
                 </div>
             </div>
 
-            {/* Progress Cards */}
+            {/* Progress Cards (Dynamic from DB) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {coursesInProgress.map(course => (
-                    <div key={course.id} className="bg-white p-5 rounded-[2rem] flex items-center gap-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div className={`p-4 rounded-2xl ${course.color}`}>
-                            <course.icon size={28} className="stroke-[2.5]" />
-                        </div>
-                        <div>
-                            <h4 className="text-xl font-extrabold text-slate-800 mb-1">{course.completed}/{course.total} Units</h4>
-                            <p className="text-slate-500 font-bold text-sm truncate">{course.title}</p>
-                        </div>
-                         <div className="ml-auto self-start -mt-1 -mr-1">
-                            <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
-                                <MoreVertical size={20} />
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                {coursesInProgress.map(course => {
+                    const IconComponent = iconMap[course.icon] || BookOpen; 
+                    return (
+                      <div key={course.id} className="bg-white p-5 rounded-[2rem] flex items-center gap-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                          <div className={`p-4 rounded-2xl ${course.color || "bg-blue-100 text-blue-600"}`}>
+                              <IconComponent size={28} className="stroke-[2.5]" />
+                          </div>
+                          <div>
+                              <h4 className="text-xl font-extrabold text-slate-800 mb-1">{course.completed}/{course.total} Units</h4>
+                              <p className="text-slate-500 font-bold text-sm truncate w-32">{course.title}</p>
+                          </div>
+                          <div className="ml-auto self-start -mt-1 -mr-1">
+                              <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+                                  <MoreVertical size={20} />
+                              </button>
+                          </div>
+                      </div>
+                    );
+                })}
             </div>
 
-            {/* Continue Learning */}
+            {/* Continue Learning (Static) */}
             <div>
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-extrabold text-slate-800">Continue Learning</h3>
@@ -181,32 +245,16 @@ export default function DashboardPage() {
 
           {/* RIGHT COLUMN (Sidebar) */}
           <div className="w-full lg:w-[26rem] space-y-8">
-            {/* Statistics Placeholder */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-xl font-extrabold text-slate-800">Learning Activity</h3>
-                    <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
-                        <MoreVertical size={20} />
-                    </button>
-                </div>
-                {/* Replace with a real chart library later */}
-                <div className="h-72 bg-slate-50 rounded-3xl flex flex-col items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-200">
-                    <span className="text-4xl mb-2">📊</span>
-                    <span>Chart Placeholder</span>
-                </div>
-            </div>
-
              {/* Greeting Card */}
              <div className="bg-violet-100 p-8 rounded-[2.5rem] flex items-center justify-between relative overflow-hidden">
                 <div className="relative z-10">
-                    <h3 className="text-2xl font-extrabold text-slate-800 mb-2">Good Morning, {currentUser.name.split(' ')[0]}!</h3>
+                    <h3 className="text-2xl font-extrabold text-slate-800 mb-2">Good Morning, {currentUser?.name?.split(' ')[0] || "Student"}!</h3>
                     <p className="text-violet-700 font-bold">Keep up the great work! 🔥</p>
                 </div>
                 <div className="text-7xl absolute -right-2 -bottom-4 rotate-12">👋</div>
              </div>
 
-
-            {/* Top Mentors */}
+            {/* Top Mentors (Static) */}
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                 <div className="flex items-center justify-between mb-8">
                     <h3 className="text-xl font-extrabold text-slate-800">Top Facilitators</h3>
@@ -234,9 +282,77 @@ export default function DashboardPage() {
                 </button>
             </div>
           </div>
-
         </main>
       </div>
+
+      {/* --- AI CHAT WIDGET --- */}
+      
+      {/* Floating Button */}
+      <button 
+        onClick={() => setIsChatOpen(true)}
+        className={`fixed bottom-8 right-8 bg-violet-600 text-white p-4 rounded-full shadow-xl shadow-violet-300 hover:scale-110 transition-transform z-50 ${isChatOpen ? 'hidden' : 'flex'}`}
+      >
+        <MessageCircle size={28} />
+      </button>
+
+      {/* Chat Window */}
+      {isChatOpen && (
+        <div className="fixed bottom-8 right-8 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col z-50 overflow-hidden font-sans">
+          
+          {/* Header */}
+          <div className="bg-violet-600 p-4 flex items-center justify-between text-white">
+            <div className="flex items-center gap-2">
+              <Bot size={20} />
+              <span className="font-bold">Masomohub Tutor</span>
+            </div>
+            <button onClick={() => setIsChatOpen(false)} className="hover:bg-white/20 p-1 rounded-full">
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Messages Area */}
+          <div className="h-80 overflow-y-auto p-4 space-y-4 bg-slate-50">
+            {chatHistory.length === 0 && (
+              <div className="text-center text-slate-400 text-sm mt-10">
+                <Bot size={40} className="mx-auto mb-2 opacity-50" />
+                <p>Hello! I am your AI assistant.</p>
+                <p>Ask me anything about your courses!</p>
+              </div>
+            )}
+            
+            {chatHistory.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'}`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+            
+            {isAiLoading && (
+              <div className="flex justify-start">
+                 <div className="bg-slate-200 p-3 rounded-2xl rounded-tl-none animate-pulse text-xs text-slate-500">
+                    Typing...
+                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input Area */}
+          <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-100 flex gap-2">
+            <input 
+              type="text" 
+              value={chatMessage}
+              onChange={(e) => setChatMessage(e.target.value)}
+              placeholder="Ask a question..."
+              className="flex-1 bg-slate-100 text-slate-900 text-sm rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-violet-500"
+            />
+            <button type="submit" disabled={isAiLoading} className="bg-violet-600 text-white p-2.5 rounded-xl hover:bg-violet-700 disabled:opacity-50">
+              <Send size={18} />
+            </button>
+          </form>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -273,7 +389,6 @@ function CircularButton({ icon: Icon, active = false, small = false }: { icon: a
     )
 }
 
-// Custom Icon for the design banner
 const SparkleIcon = ({ className, size }: { className?: string, size?: number }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
